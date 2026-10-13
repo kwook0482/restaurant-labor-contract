@@ -52,7 +52,21 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
 .footer-note{font-size:12px;color:#60718a;margin:18px 2px 0}
 .hidden{display:none!important}
 @media(max-width:780px){.topbar{padding:14px 16px}.brand{font-size:17px}.topnote{display:none}.wrap{margin:14px auto;padding:0 10px 24px}.hero{padding:19px}.hero h1{font-size:22px}.hero-mark{font-size:36px}.steps{grid-template-columns:1fr;gap:6px}.step-chip{padding:7px 10px}.step-chip:not(.active):not(.done){display:none}.card-head,.card-body{padding:17px}.card-head h2{font-size:19px}.grid,.grid.three,.review-grid,.signature-grid{grid-template-columns:1fr}.worker-options{grid-template-columns:1fr}.actions{padding:14px 16px}.btn{padding:10px 14px}.contract{padding:22px 16px}.contract h2{letter-spacing:4px;font-size:21px}.contract-table th,.contract-table td{padding:7px 6px;font-size:12px}.contract-table th{width:105px}.review-block dl{grid-template-columns:95px 1fr}.day-table{font-size:11px}.day-table th,.day-table td{padding:4px}.day-table input{min-width:55px;font-size:12px}.signatures-print{gap:12px}.output-actions{display:grid;grid-template-columns:1fr}.output-actions .btn{width:100%;min-width:0}}
-@media print{body{background:#fff}.topbar,.hero,.steps,.card-head,.actions,.footer-note,.no-print,.output-actions,.output-tip,.completion{display:none!important}.wrap{max-width:none;margin:0;padding:0}.card{border:0;box-shadow:none}.card-body{padding:0}.contract{box-shadow:none;border:0;border-radius:0;max-width:none;padding:10mm;color:#000}.contract h2{font-size:22pt}.contract li,.contract p{font-size:10.5pt}.contract-table{font-size:10pt}.contract-table th,.contract-table td{padding:6px}.signatures-print{break-inside:avoid}.print-sign img{height:58px}}
+@media print{
+  @page{size:auto;margin:10mm}
+  html,body{background:#fff!important;margin:0!important;padding:0!important;width:100%!important}
+  .topbar,.hero,.steps,.card-head,.actions,.footer-note,.no-print,.output-actions,.output-tip,.completion{display:none!important}
+  .wrap{width:100%!important;max-width:none!important;margin:0!important;padding:0!important}
+  .card{border:0!important;box-shadow:none!important;overflow:visible!important}
+  .card-body{padding:0!important}
+  .contract{display:block!important;width:100%!important;max-width:none!important;margin:0!important;padding:0!important;box-shadow:none!important;border:0!important;border-radius:0!important;color:#000!important;overflow:visible!important}
+  .contract h2{font-size:22pt;letter-spacing:4px}
+  .contract li,.contract p{font-size:10.5pt}
+  .contract-table{font-size:10pt;break-inside:avoid}
+  .contract-table th,.contract-table td{padding:6px}
+  .signatures-print{break-inside:avoid}
+  .print-sign img{height:58px}
+}
 </style>
 </head>
 <body>
@@ -188,12 +202,32 @@ function render(){
  <div class="output-actions no-print">
    <button type="button" class="btn primary" id="savePdfBtn">▣ PDF로 저장 / 인쇄</button>
  </div>
- <div class="output-tip no-print">PDF 저장은 인쇄 창에서 ‘PDF로 저장’을 선택하거나 프린터를 선택해 출력하세요. 계약서 사본은 사업주가 별도로 저장·출력하여 보관해 주세요.</div>`;
+ <div class="output-tip no-print">PDF 저장은 인쇄 화면에서 ‘PDF로 저장’을 선택하세요. 모바일에서 버튼을 눌러도 반응이 없으면 아래 도움말을 확인해 주세요. 계약서 사본은 사업주가 별도로 저장·출력하여 보관해 주세요.</div>
+  <div class="output-actions no-print"><button type="button" class="btn hidden" id="mobilePrintHelp">📱 모바일 출력 도움말</button></div>`;
  bindInputs();
  if(step===3)bindCanvases();
  if(step===4){
-   const pdfBtn=$('savePdfBtn'); if(pdfBtn)pdfBtn.addEventListener('click',()=>window.print());
- }
+    const pdfBtn=$('savePdfBtn');
+    if(pdfBtn) pdfBtn.addEventListener('click',()=>{
+      if(typeof window.print!=='function'){
+        alert('이 브라우저에서는 바로 인쇄를 열 수 없습니다. Chrome 앱에서 페이지를 열고 오른쪽 위 ⋮ 메뉴에서 인쇄 기능을 찾아 PDF로 저장해 주세요.');
+        return;
+      }
+      try {
+        window.print();
+        if(/Android/i.test(navigator.userAgent)){
+          const helpBtn=$('mobilePrintHelp');
+          if(helpBtn) helpBtn.classList.remove('hidden');
+        }
+      } catch(err) {
+        alert('인쇄 화면을 열지 못했습니다. Chrome 앱에서 페이지를 다시 열고 인쇄를 시도해 주세요.');
+      }
+    });
+    const helpBtn=$('mobilePrintHelp');
+    if(helpBtn) helpBtn.addEventListener('click',()=>{
+      alert('안드로이드 도움말: 1) 이 페이지를 Chrome 앱에서 엽니다. 2) 오른쪽 위 ⋮ 메뉴를 누릅니다. 3) 인쇄 메뉴를 선택합니다. 4) 프린터 선택에서 “PDF로 저장”을 선택합니다. 메뉴 이름은 기기와 Chrome 버전에 따라 다를 수 있습니다.');
+    });
+  }
 }
 function reviewBlock(title,rows){return `<div class="review-block"><h3>${title}</h3><dl>${rows.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v||'미입력')}</dd>`).join('')}</dl></div>`}
 function insuranceText(){const names={employment:'고용보험',industrial:'산재보험',pension:'국민연금',health:'건강보험'};return Object.entries(state.benefits.insurance).filter(([k,v])=>v).map(([k])=>names[k]).join(', ')||'선택 없음'}
